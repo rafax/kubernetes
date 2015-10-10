@@ -61,42 +61,42 @@ Use the `examples/guestbook-go/redis-master-controller.json` file to create a [r
 
 1. Use the [redis-master-controller.json](redis-master-controller.json) file to create the Redis master replication controller in your Kubernetes cluster by running the `kubectl create -f` *`filename`* command:
 
-    ```console
-    $ kubectl create -f examples/guestbook-go/redis-master-controller.json
-    replicationcontrollers/redis-master
-    ```
+```console
+$ kubectl create -f examples/guestbook-go/redis-master-controller.json
+replicationcontrollers/redis-master
+```
 
 2. To verify that the redis-master controller is up, list the replication controllers you created in the cluster with the `kubectl get rc` command(if you don't specify a `--namespace`, the `default` namespace will be used. The same below):
 
-    ```console
-    $ kubectl get rc
-    CONTROLLER             CONTAINER(S)            IMAGE(S)                    SELECTOR                         REPLICAS
-    redis-master           redis-master            gurpartap/redis             app=redis,role=master            1
-    ...
-    ```
+```console
+$ kubectl get rc
+CONTROLLER             CONTAINER(S)            IMAGE(S)                    SELECTOR                         REPLICAS
+redis-master           redis-master            gurpartap/redis             app=redis,role=master            1
+...
+```
 
     Result: The replication controller then creates the single Redis master pod.
 
 3. To verify that the redis-master pod is running, list the pods you created in cluster with the `kubectl get pods` command:
 
-    ```console
-    $ kubectl get pods
-    NAME                        READY     STATUS    RESTARTS   AGE
-    redis-master-xx4uv          1/1       Running   0          1m
-    ...
-    ```
+```console
+$ kubectl get pods
+NAME                        READY     STATUS    RESTARTS   AGE
+redis-master-xx4uv          1/1       Running   0          1m
+...
+```
 
     Result: You'll see a single Redis master pod and the machine where the pod is running after the pod gets placed (may take up to thirty seconds).
 
 4. To verify what containers are running in the redis-master pod, you can SSH to that machine with `gcloud compute ssh --zone` *`zone_name`* *`host_name`* and then run `docker ps`:
 
-    ```console
-    me@workstation$ gcloud compute ssh --zone us-central1-b kubernetes-minion-bz1p
-    
-    me@kubernetes-minion-3:~$ sudo docker ps
-    CONTAINER ID        IMAGE                      COMMAND                CREATED             STATUS
-    d5c458dabe50        gurpartap/redis:latest     "/usr/local/bin/redi   5 minutes ago       Up 5 minutes
-    ```
+```console
+me@workstation$ gcloud compute ssh --zone us-central1-b kubernetes-minion-bz1p
+
+me@kubernetes-minion-3:~$ sudo docker ps
+CONTAINER ID        IMAGE                      COMMAND                CREATED             STATUS
+d5c458dabe50        gurpartap/redis:latest     "/usr/local/bin/redi   5 minutes ago       Up 5 minutes
+```
 
     Note: The initial `docker pull` can take a few minutes, depending on network conditions.
 
@@ -108,19 +108,19 @@ Services find the pods to load balance based on pod labels. The pod that you cre
 
 1. Use the [redis-master-service.json](redis-master-service.json) file to create the service in your Kubernetes cluster by running the `kubectl create -f` *`filename`* command:
 
-    ```console
-    $ kubectl create -f examples/guestbook-go/redis-master-service.json
-    services/redis-master
-    ```
+```console
+$ kubectl create -f examples/guestbook-go/redis-master-service.json
+services/redis-master
+```
 
 2. To verify that the redis-master service is up, list the services you created in the cluster with the `kubectl get services` command:
 
-    ```console
-    $ kubectl get services
-    NAME              CLUSTER_IP       EXTERNAL_IP       PORT(S)       SELECTOR               AGE
-    redis-master      10.0.136.3       <none>            6379/TCP      app=redis,role=master  1h
-    ...
-    ```
+```console
+$ kubectl get services
+NAME              CLUSTER_IP       EXTERNAL_IP       PORT(S)       SELECTOR               AGE
+redis-master      10.0.136.3       <none>            6379/TCP      app=redis,role=master  1h
+...
+```
 
     Result: All new pods will see the `redis-master` service running on the host (`$REDIS_MASTER_SERVICE_HOST` environment variable) at port 6379, or running on `redis-master:6379`. After the service is created, the service proxy on each node is configured to set up a proxy on the specified port (in our example, that's port 6379).
 
@@ -131,40 +131,40 @@ The Redis master we created earlier is a single pod (REPLICAS = 1), while the Re
 
 1. Use the file [redis-slave-controller.json](redis-slave-controller.json) to create the replication controller by running the `kubectl create -f` *`filename`* command:
 
-    ```console
-    $ kubectl create -f examples/guestbook-go/redis-slave-controller.json
-    replicationcontrollers/redis-slave
-    ```
+```console
+$ kubectl create -f examples/guestbook-go/redis-slave-controller.json
+replicationcontrollers/redis-slave
+```
 
 2. To verify that the redis-slave controller is running, run the `kubectl get rc` command:
 
-    ```console
-    $ kubectl get rc
-    CONTROLLER              CONTAINER(S)            IMAGE(S)               SELECTOR                    REPLICAS
-    redis-master            redis-master            gurpartap/redis        app=redis,role=master       1
-    redis-slave             redis-slave             gurpartap/redis        app=redis,role=slave        2
-    ...
-    ```
+```console
+$ kubectl get rc
+CONTROLLER              CONTAINER(S)            IMAGE(S)               SELECTOR                    REPLICAS
+redis-master            redis-master            gurpartap/redis        app=redis,role=master       1
+redis-slave             redis-slave             gurpartap/redis        app=redis,role=slave        2
+...
+```
 
     Result: The replication controller creates and configures the Redis slave pods through the redis-master service (name:port pair, in our example that's `redis-master:6379`).
 
     Example:
     The Redis slaves get started by the replication controller with the following command:
 
-    ```console
-    redis-server --slaveof redis-master 6379
-    ```
+```console
+redis-server --slaveof redis-master 6379
+```
 
 3. To verify that the Redis master and slaves pods are running, run the `kubectl get pods` command:
 
-    ```console
-    $ kubectl get pods
-    NAME                          READY     STATUS    RESTARTS   AGE
-    redis-master-xx4uv            1/1       Running   0          18m
-    redis-slave-b6wj4             1/1       Running   0          1m
-    redis-slave-iai40             1/1       Running   0          1m
-    ...
-    ```
+```console
+$ kubectl get pods
+NAME                          READY     STATUS    RESTARTS   AGE
+redis-master-xx4uv            1/1       Running   0          18m
+redis-slave-b6wj4             1/1       Running   0          1m
+redis-slave-iai40             1/1       Running   0          1m
+...
+```
 
     Result: You see the single Redis master and two Redis slave pods.
 
@@ -174,20 +174,20 @@ Just like the master, we want to have a service to proxy connections to the read
 
 1. Use the [redis-slave-service.json](redis-slave-service.json) file to create the Redis slave service by running the `kubectl create -f` *`filename`* command:
 
-    ```console
-    $ kubectl create -f examples/guestbook-go/redis-slave-service.json
-    services/redis-slave
-    ```
+```console
+$ kubectl create -f examples/guestbook-go/redis-slave-service.json
+services/redis-slave
+```
 
 2. To verify that the redis-slave service is up, list the services you created in the cluster with the `kubectl get services` command:
 
-    ```console
-    $ kubectl get services
-    NAME              CLUSTER_IP       EXTERNAL_IP       PORT(S)       SELECTOR               AGE
-    redis-master      10.0.136.3       <none>            6379/TCP      app=redis,role=master  1h
-    redis-slave       10.0.21.92       <none>            6379/TCP      app-redis,role=slave   1h
-    ...
-    ```
+```console
+$ kubectl get services
+NAME              CLUSTER_IP       EXTERNAL_IP       PORT(S)       SELECTOR               AGE
+redis-master      10.0.136.3       <none>            6379/TCP      app=redis,role=master  1h
+redis-slave       10.0.21.92       <none>            6379/TCP      app-redis,role=slave   1h
+...
+```
 
     Result: The service is created with labels `app=redis` and `role=slave` to identify that the pods are running the Redis slaves.
 
@@ -199,35 +199,35 @@ This is a simple Go `net/http` ([negroni](https://github.com/codegangsta/negroni
 
 1. Use the [guestbook-controller.json](guestbook-controller.json) file to create the guestbook replication controller by running the `kubectl create -f` *`filename`* command:
 
-    ```console
-    $ kubectl create -f examples/guestbook-go/guestbook-controller.json
-    replicationcontrollers/guestbook
-    ```
+```console
+$ kubectl create -f examples/guestbook-go/guestbook-controller.json
+replicationcontrollers/guestbook
+```
 
 2. To verify that the guestbook replication controller is running, run the `kubectl get rc` command:
 
-    ```console
-    $ kubectl get rc
-    CONTROLLER            CONTAINER(S)         IMAGE(S)                    SELECTOR                  REPLICAS
-    guestbook             guestbook            kubernetes/guestbook:v2     app=guestbook             3
-    redis-master          redis-master         gurpartap/redis             app=redis,role=master     1
-    redis-slave           redis-slave          gurpartap/redis             app=redis,role=slave      2
-    ...
-    ```
+```console
+$ kubectl get rc
+CONTROLLER            CONTAINER(S)         IMAGE(S)                    SELECTOR                  REPLICAS
+guestbook             guestbook            kubernetes/guestbook:v2     app=guestbook             3
+redis-master          redis-master         gurpartap/redis             app=redis,role=master     1
+redis-slave           redis-slave          gurpartap/redis             app=redis,role=slave      2
+...
+```
 
 3. To verify that the guestbook pods are running (it might take up to thirty seconds to create the pods), list the pods you created in cluster with the `kubectl get pods` command:
 
-    ```console
-    $ kubectl get pods
-    NAME                           READY     STATUS    RESTARTS   AGE
-    guestbook-3crgn                1/1       Running   0          2m
-    guestbook-gv7i6                1/1       Running   0          2m
-    guestbook-x405a                1/1       Running   0          2m
-    redis-master-xx4uv             1/1       Running   0          23m
-    redis-slave-b6wj4              1/1       Running   0          6m
-    redis-slave-iai40              1/1       Running   0          6m
-    ... 
-    ```
+```console
+$ kubectl get pods
+NAME                           READY     STATUS    RESTARTS   AGE
+guestbook-3crgn                1/1       Running   0          2m
+guestbook-gv7i6                1/1       Running   0          2m
+guestbook-x405a                1/1       Running   0          2m
+redis-master-xx4uv             1/1       Running   0          23m
+redis-slave-b6wj4              1/1       Running   0          6m
+redis-slave-iai40              1/1       Running   0          6m
+... 
+```
 
     Result: You see a single Redis master, two Redis slaves, and three guestbook pods.
 
@@ -237,21 +237,21 @@ Just like the others, we create a service to group the guestbook pods but this t
 
 1. Use the [guestbook-service.json](guestbook-service.json) file to create the guestbook service by running the `kubectl create -f` *`filename`* command:
 
-    ```console
-    $ kubectl create -f examples/guestbook-go/guestbook-service.json
-    ```
+```console
+$ kubectl create -f examples/guestbook-go/guestbook-service.json
+```
 
 
 2. To verify that the guestbook service is up, list the services you created in the cluster with the `kubectl get services` command:
 
-    ```console
-    $ kubectl get services
-    NAME              CLUSTER_IP       EXTERNAL_IP       PORT(S)       SELECTOR               AGE
-    guestbook         10.0.217.218     146.148.81.8      3000/TCP      app=guestbook          1h
-    redis-master      10.0.136.3       <none>            6379/TCP      app=redis,role=master  1h
-    redis-slave       10.0.21.92       <none>            6379/TCP      app-redis,role=slave   1h
-    ...
-    ```
+```console
+$ kubectl get services
+NAME              CLUSTER_IP       EXTERNAL_IP       PORT(S)       SELECTOR               AGE
+guestbook         10.0.217.218     146.148.81.8      3000/TCP      app=guestbook          1h
+redis-master      10.0.136.3       <none>            6379/TCP      app=redis,role=master  1h
+redis-slave       10.0.21.92       <none>            6379/TCP      app-redis,role=slave   1h
+...
+```
 
     Result: The service is created with label `app=guestbook`.
 
